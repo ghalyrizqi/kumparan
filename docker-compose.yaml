@@ -1,0 +1,93 @@
+version: "3"
+
+services:
+  source_mysql:
+    image: mysql:latest
+    ports:
+      - "3306:3306"
+    networks:
+      - elt_network
+    environment:
+      MYSQL_DATABASE: mysql_db
+      MYSQL_USER: mysql_user
+      MYSQL_PASSWORD: pass
+      MYSQL_ROOT_PASSWORD: root
+    command: --default-authentication-plugin=mysql_native_password
+
+  destination_postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    networks:
+      - elt_network
+    environment:
+      POSTGRES_DB: postgres_db
+      POSTGRES_USER: postgres_user
+      POSTGRES_PASSWORD: pass
+
+  airflow_postgres:
+    image: postgres:latest
+    networks:
+      - elt_network
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+
+  init-airflow:
+    image: apache/airflow:latest
+    depends_on:
+      - airflow_postgres
+    networks:
+      - elt_network
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow_postgres:5432/airflow
+    command: >
+      bash -c "airflow db migrate && 
+               airflow users create --username airflow --password airflow --firstname John --lastname Doe --role Admin --email admin@example.com"
+
+  webserver:
+    image: apache/airflow:latest
+    user: root
+    depends_on:
+      - airflow_postgres
+    networks:
+      - elt_network
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./elt:/opt/airflow/elt
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow_postgres:5432/airflow
+      AIRFLOW__WEBSERVER__SECRET_KEY: secret
+      AIRFLOW__WEBSERVER__RBAC: "True"
+      AIRFLOW__WEBSERVER__BASE_URL: http://localhost:8080
+      AIRFLOW__CORE__DEFAULT_TIMEZONE: Asia/Jakarta
+    ports:
+      - "8080:8080"
+    command: webserver
+
+  scheduler:
+    image: apache/airflow:latest
+    user: root
+    depends_on:
+      - airflow_postgres
+    networks:
+      - elt_network
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./elt:/opt/airflow/elt
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow_postgres:5432/airflow
+      AIRFLOW__WEBSERVER__SECRET_KEY: secret
+      AIRFLOW__WEBSERVER__RBAC: "True"
+      AIRFLOW__WEBSERVER__BASE_URL: http://localhost:8080
+    command: scheduler
+
+networks:
+  elt_network:
+    driver: bridge
