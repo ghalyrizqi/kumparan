@@ -1,8 +1,4 @@
-# Test DE Kumparan - Ghaly
-
-# Questions 1
-
-## Installation
+# Installation
 
 ```bash
 docker compose up init-airflow -d
@@ -10,62 +6,58 @@ docker compose up init-airflow -d
 docker compose up
 ```
 
-## Login Airflow
+# Login Airflow
 
-### Username: airflow
+## [Apache Airflow Link](http://localhost:8080/).
 
-### Password: password
+## Username: airflow
 
-## Checking DB
+## Password: password
 
-### Access source db interactively
+# Checking DB
+
+## Access source db interactively
 
 ```bash
 docker exec -it kumparan-source_postgres-1 psql -U postgres
 ```
 
-### Connect to Source Database
+## Connect to Source Database
 
 ```bash
 \c kumparan_destination_postgres_db
 ```
 
-### Show List of Tables in the Database
+## Show List of Tables in the Database
 
 ```bash
 \dt
 ```
 
-### show content in table articles
+## show content in table articles
 
 ```bash
 select * from articles;
 ```
 
-### Now Access Destination db Interactively
+## Now Access Destination db Interactively
 
 ```bash
 docker exec -it kumparan-destination_postgres-1 psql -U postgres
 ```
 
-### Connect to Destination Database
+## Connect to Destination Database
 
 ```bash
 \c kumparan_destination_postgres_db
 ```
 
-### Check is there any Tables in the Destination Database
+## Check is there any Tables in the Destination Database
 
 ```bash
 \dt
 ```
 
-### Run dags
+## Run dags
 
 click on the dags named "elt_ghaly", then trigger the job by click on the Refresh button. then repeat the checking process above to make sure is the data succesfully migrated / copied from source to destination.
-
-# Question 2
-
-## Check the Airflow Schedule
-
-Look at the top right corner of the Airflow webserver UI to see the dags schedule. It run each hour at minutes 0 everyday.
